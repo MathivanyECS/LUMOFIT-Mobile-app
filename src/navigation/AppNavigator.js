@@ -10,13 +10,13 @@ import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
-import ConnectedDevicesScreen from '../screens/ConnectedDevicesScreen';
-import UserDetailsScreen from '../screens/UserDetailsScreen';
-import AlertDetailScreen from '../screens/AlertDetailScreen';
+import HealthDetailPage from '../screens/HealthDetailPage';
+import CallEmergencyScreen from '../screens/CallEmergencyScreen';
+import ViewVitalsScreen from '../screens/ViewVitalsScreen';
+import AlertsScreen from '../screens/AlertsScreen';
 
 // Import AuthContext
-import { AuthContext ,AuthProvider} from '../Context/AuthProvider';
-
+import { AuthContext, AuthProvider } from '../Context/AuthProvider';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,8 +31,8 @@ const MainTabNavigator = () => {
 
           if (route.name === ROUTES.DASHBOARD) {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === ROUTES.CONNECTED_DEVICES) {
-            iconName = focused ? 'bluetooth' : 'bluetooth-outline';
+          } else if (route.name === ROUTES.ALERTS) {
+            iconName = focused ? 'notifications' : 'notifications-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -44,9 +44,9 @@ const MainTabNavigator = () => {
     >
       <Tab.Screen name={ROUTES.DASHBOARD} component={DashboardScreen} />
       <Tab.Screen
-        name={ROUTES.CONNECTED_DEVICES}
-        component={ConnectedDevicesScreen}
-        options={{ title: 'Connected Devices' }}
+        name={ROUTES.ALERTS}
+        component={AlertsScreen}
+        options={{ title: 'Alerts' }}
       />
     </Tab.Navigator>
   );
@@ -54,12 +54,11 @@ const MainTabNavigator = () => {
 
 // Main stack navigator
 const AppNavigator = () => {
-  const { userToken,isLoading } = useContext(AuthContext);  // Get userToken from AuthContext
+  const { userToken, isLoading } = useContext(AuthContext); // Get userToken from AuthContext
 
   if (isLoading) {
     return null; // You can replace this with a loading screen if needed
   }
-
 
   return (
     <Stack.Navigator
@@ -78,9 +77,11 @@ const AppNavigator = () => {
           <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
         </>
       )}
-      {/* Always accessible screens */}
-      <Stack.Screen name={ROUTES.USER_DETAILS} component={UserDetailsScreen} />
-      <Stack.Screen name={ROUTES.ALERT_DETAIL} component={AlertDetailScreen} />
+      
+      {/* Additional screens accessible after login */}
+      <Stack.Screen name={ROUTES.HEALTH_DETAIL} component={HealthDetailPage} />
+      <Stack.Screen name={ROUTES.VIEW_VITALS} component={ViewVitalsScreen} />
+      <Stack.Screen name={ROUTES.CALL_EMERGENCY} component={CallEmergencyScreen} />
     </Stack.Navigator>
   );
 };

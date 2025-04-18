@@ -1,10 +1,12 @@
+// Constants/routes.js
 export const ROUTES = {
-    SPLASH: 'Splash',
-    LOGIN: 'Login',
-    REGISTER: 'Register',
-    DASHBOARD: 'Dashboard',
-    CONNECTED_DEVICES: 'ConnectedDevices',
-    USER_DETAILS: 'UserDetails',
-    ALERT_DETAIL: 'AlertDetail',
-    MAIN_TABS: 'MainTabs',
-  };
+  SPLASH: 'Splash',
+  LOGIN: 'Login',
+  REGISTER: 'Register',
+  DASHBOARD: 'Dashboard',
+  MAIN_TABS: 'MainTabs',
+  HEALTH_DETAIL: 'HealthDetail',
+  VIEW_VITALS: 'ViewVitals',
+  CALL_EMERGENCY: 'CallEmergency',
+  ALERTS: 'Alerts',
+};
