@@ -1,54 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import IconPlaceholder from '../components/IconPlaceholder';
 
 const HealthDetailPage = ({ route, navigation }) => {
   const { patient } = route.params;
-  console.log('Patient data:', patient);
   const [healthData, setHealthData] = useState({
     heartRate: {
-      value: 75,
+      value: '--',
       unit: 'BPM',
-      status: 'Normal'
+      status: 'Unknown',
     },
     oxygenLevel: {
-      value: 98,
+      value: '--',
       unit: '%',
-      status: 'Normal'
+      status: 'Unknown',
     },
     stressLevel: {
-      value: 'High',
-      status: 'Alert'
-    }
+      value: '--',
+      status: 'Unknown',
+    },
   });
 
-  const [recentAlerts, setRecentAlerts] = useState([
-    {
-      id: 'alert-1',
-      type: 'High Alert',
-      issue: 'Abnormal Heart Rate',
-      value: '150 BPM - Above normal range',
-      time: 'Today, 2:30 PM',
-      color: '#F44336'
-    },
-    {
-      id: 'alert-2',
-      type: 'Medium Alert',
-      issue: 'Blood Pressure Elevated',
-      value: '135/90 - Slightly elevated',
-      time: 'Today, 11:45 AM',
-      color: '#FF9800'
-    },
-    {
-      id: 'alert-3',
-      type: 'Low Alert',
-      issue: 'Low Blood Sugar',
-      value: '68 mg/dL - Below normal range',
-      time: 'Yesterday, 8:15 PM',
-      color: '#FFC107'
-    }
-  ]);
+  const [recentAlerts, setRecentAlerts] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Placeholder for future API call to fetch real-time health data and alerts
+    const fetchHealthData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // TODO: Replace with actual API call to fetch health data for patient.id
+        // Example:
+        // const response = await fetch(https://api.example.com/patients/${patient.id}/health);
+        // const data = await response.json();
+
+        // Simulated data for now
+        const data = {
+          heartRate: { value: 75, unit: 'BPM', status: 'Normal' },
+          oxygenLevel: { value: 98, unit: '%', status: 'Normal' },
+          stressLevel: { value: 'High', status: 'Alert' },
+          recentAlerts: [
+            {
+              id: 'alert-1',
+              type: 'High Alert',
+              issue: 'Abnormal Heart Rate',
+              value: '150 BPM - Above normal range',
+              time: 'Today, 2:30 PM',
+              color: '#F44336',
+            },
+            {
+              id: 'alert-2',
+              type: 'Medium Alert',
+              issue: 'Blood Pressure Elevated',
+              value: '135/90 - Slightly elevated',
+              time: 'Today, 11:45 AM',
+              color: '#FF9800',
+            },
+            {
+              id: 'alert-3',
+              type: 'Low Alert',
+              issue: 'Low Blood Sugar',
+              value: '68 mg/dL - Below normal range',
+              time: 'Yesterday, 8:15 PM',
+              color: '#FFC107',
+            },
+          ],
+        };
+
+        setHealthData({
+          heartRate: data.heartRate,
+          oxygenLevel: data.oxygenLevel,
+          stressLevel: data.stressLevel,
+        });
+        setRecentAlerts(data.recentAlerts);
+      } catch (err) {
+        setError('Failed to load health data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHealthData();
+
+    // Optionally, set up polling or subscription for live updates here
+
+  }, [patient.id]);
+
+  const handleCallEmergency = () => {
+    // Placeholder for calling Lumofit user via API or hardware integration
+    Alert.alert('Call Emergency', 'Calling Lumofit user for patient: ' + patient.name);
+    // TODO: Integrate with actual call functionality
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -73,7 +120,7 @@ const HealthDetailPage = ({ route, navigation }) => {
             </View>
             <Text style={styles.infoValue}>{patient.age} years</Text>
           </View>
-          
+
           <View style={styles.infoItem}>
             <View style={styles.infoItemHeader}>
               <Text style={styles.infoLabel}>Gender</Text>
@@ -91,104 +138,150 @@ const HealthDetailPage = ({ route, navigation }) => {
         <Text style={styles.sectionTitle}>Live Body Conditions</Text>
       </View>
 
-      <View style={styles.vitalsCard}>
-        <View style={styles.vitalItem}>
-          <View style={styles.vitalHeader}>
-            <Ionicons name="heart" size={20} color="#F44336" />
-            <Text style={styles.vitalTitle}>Heart Rate</Text>
-          </View>
-          <View style={styles.vitalValueContainer}>
-            <Text style={styles.vitalValue}>{healthData.heartRate.value} BPM</Text>
-            <View style={[styles.statusBadge, 
-              { backgroundColor: healthData.heartRate.status === 'Normal' ? '#E8F5E9' : '#FFEBEE' }]}>
-              <Text style={[styles.statusText, 
-                { color: healthData.heartRate.status === 'Normal' ? '#4CAF50' : '#F44336' }]}>
-                {healthData.heartRate.status}
+      {loading ? (
+        <Text style={{ textAlign: 'center', marginVertical: 20 }}>Loading health data...</Text>
+      ) : error ? (
+        <Text style={{ textAlign: 'center', marginVertical: 20, color: 'red' }}>{error}</Text>
+      ) : (
+        <View style={styles.vitalsCard}>
+          <View style={styles.vitalItem}>
+            <View style={styles.vitalHeader}>
+              <Ionicons name="heart" size={20} color="#F44336" />
+              <Text style={styles.vitalTitle}>Heart Rate</Text>
+            </View>
+            <View style={styles.vitalValueContainer}>
+              <Text style={styles.vitalValue}>
+                {healthData.heartRate.value} {healthData.heartRate.unit}
               </Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor:
+                      healthData.heartRate.status === 'Normal' ? '#E8F5E9' : '#FFEBEE',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color:
+                        healthData.heartRate.status === 'Normal' ? '#4CAF50' : '#F44336',
+                    },
+                  ]}
+                >
+                  {healthData.heartRate.status}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.vitalItem}>
+            <View style={styles.vitalHeader}>
+              <Ionicons name="fitness" size={20} color="#2196F3" />
+              <Text style={styles.vitalTitle}>Oxygen Level</Text>
+            </View>
+            <View style={styles.vitalValueContainer}>
+              <Text style={styles.vitalValue}>
+                {healthData.oxygenLevel.value}
+                {healthData.oxygenLevel.unit}
+              </Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor:
+                      healthData.oxygenLevel.status === 'Normal' ? '#E8F5E9' : '#FFEBEE',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color:
+                        healthData.oxygenLevel.status === 'Normal' ? '#4CAF50' : '#F44336',
+                    },
+                  ]}
+                >
+                  {healthData.oxygenLevel.status}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.vitalItem}>
+            <View style={styles.vitalHeader}>
+              <Ionicons name="brain" size={20} color="#9C27B0" />
+              <Text style={styles.vitalTitle}>Stress Level</Text>
+            </View>
+            <View style={styles.vitalValueContainer}>
+              <Text style={styles.vitalValue}>{healthData.stressLevel.value}</Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {
+                    backgroundColor:
+                      healthData.stressLevel.status === 'Normal' ? '#E8F5E9' : '#FFEBEE',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color:
+                        healthData.stressLevel.status === 'Normal' ? '#4CAF50' : '#F44336',
+                    },
+                  ]}
+                >
+                  {healthData.stressLevel.status}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.vitalItem}>
-          <View style={styles.vitalHeader}>
-            <Ionicons name="fitness" size={20} color="#2196F3" />
-            <Text style={styles.vitalTitle}>Oxygen Level</Text>
-          </View>
-          <View style={styles.vitalValueContainer}>
-            <Text style={styles.vitalValue}>{healthData.oxygenLevel.value}%</Text>
-            <View style={[styles.statusBadge, 
-              { backgroundColor: healthData.oxygenLevel.status === 'Normal' ? '#E8F5E9' : '#FFEBEE' }]}>
-              <Text style={[styles.statusText, 
-                { color: healthData.oxygenLevel.status === 'Normal' ? '#4CAF50' : '#F44336' }]}>
-                {healthData.oxygenLevel.status}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.vitalItem}>
-          <View style={styles.vitalHeader}>
-            <Ionicons name="brain" size={20} color="#9C27B0" />
-            <Text style={styles.vitalTitle}>Stress Level</Text>
-          </View>
-          <View style={styles.vitalValueContainer}>
-            <Text style={styles.vitalValue}>{healthData.stressLevel.value}</Text>
-            <View style={[styles.statusBadge, 
-              { backgroundColor: healthData.stressLevel.status === 'Normal' ? '#E8F5E9' : '#FFEBEE' }]}>
-              <Text style={[styles.statusText, 
-                { color: healthData.stressLevel.status === 'Normal' ? '#4CAF50' : '#F44336' }]}>
-                {healthData.stressLevel.status}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
+      )}
 
       {/* Alert Notification */}
-      <View style={styles.alertNotification}>
-        <View style={styles.alertHeader}>
-          <Ionicons name="warning" size={20} color="#fff" />
-          <Text style={styles.alertHeaderText}>Alert Notification</Text>
-        </View>
-        <Text style={styles.alertMessage}>
-          High stress level detected. Notification sent to caretaker.
-        </Text>
-        <TouchableOpacity style={styles.contactButton}>
-          <Text style={styles.contactButtonText}>Contact Caretaker</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Removed alert notification as per user request */}
 
       {/* Recent Alerts */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Health Alerts</Text>
       </View>
 
-      {recentAlerts.map(alert => (
-        <View key={alert.id} style={[styles.alertCard, { borderLeftColor: alert.color }]}>
-          <View style={styles.alertCardHeader}>
-            <Text style={[styles.alertType, { color: alert.color }]}>{alert.type}</Text>
-            <Text style={styles.alertTime}>{alert.time}</Text>
+      {recentAlerts.length === 0 ? (
+        <Text style={{ textAlign: 'center', marginVertical: 10 }}>No recent alerts.</Text>
+      ) : (
+        recentAlerts.map((alert) => (
+          <View key={alert.id} style={[styles.alertCard, { borderLeftColor: alert.color }]}>
+            <View style={styles.alertCardHeader}>
+              <Text style={[styles.alertType, { color: alert.color }]}>{alert.type}</Text>
+              <Text style={styles.alertTime}>{alert.time}</Text>
+            </View>
+            <Text style={styles.alertIssue}>{alert.issue}</Text>
+            <Text style={styles.alertValue}>{alert.value}</Text>
           </View>
-          <Text style={styles.alertIssue}>{alert.issue}</Text>
-          <Text style={styles.alertValue}>{alert.value}</Text>
-        </View>
-      ))}
+        ))
+      )}
 
       {/* Quick Actions */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, styles.emergencyButton]}
           onPress={() => navigation.navigate('CallEmergency', { patient })}
         >
           <Ionicons name="call" size={24} color="#fff" />
           <Text style={styles.actionButtonText}>Call Emergency</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.actionButton, styles.vitalsButton]}
           onPress={() => navigation.navigate('ViewVitals', { patient })}
         >

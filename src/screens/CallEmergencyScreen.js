@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-const CallEmergencyScreen = ({ route }) => {
+const CallEmergencyScreen = ({ route, navigation }) => {
   const { patient } = route.params;
   const [isRecording, setIsRecording] = useState(false);
   const [contactInfo, setContactInfo] = useState({
@@ -11,7 +10,8 @@ const CallEmergencyScreen = ({ route }) => {
     deviceId: 'LF-2025-089',
     isActive: true,
     lastSignal: '2 mins ago',
-    signalStrength: 'Excellent'
+    signalStrength: 'Excellent',
+    phoneNumber: patient.emergencyContact || '1234567890', // Use patient's emergency contact number if available
   });
 
   const handleRecord = () => {
@@ -19,10 +19,30 @@ const CallEmergencyScreen = ({ route }) => {
     // In a real app, you would implement voice recording functionality here
   };
 
+  const handleCall = () => {
+    const phoneNumber = contactInfo.phoneNumber;
+    if (!phoneNumber) {
+      Alert.alert('Error', 'No phone number available to call.');
+      return;
+    }
+    const url = 'tel:${phoneNumber}';
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (!supported) {
+          Alert.alert('Error', 'Phone call is not supported on this device.');
+        } else {
+          return Linking.openURL(url);
+        }
+      })
+      .catch((err) => Alert.alert('Error', 'An error occurred: ' + err));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color="#E53935" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#E53935" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Contact</Text>
       </View>
 
@@ -45,7 +65,7 @@ const CallEmergencyScreen = ({ route }) => {
       </View>
 
       {/* Direct Call */}
-      <TouchableOpacity style={styles.callButton}>
+      <TouchableOpacity style={styles.callButton} onPress={handleCall}>
         <Ionicons name="call" size={20} color="#fff" />
         <Text style={styles.callButtonText}>Call LumoFit User</Text>
         <Ionicons name="chevron-forward" size={20} color="#fff" />

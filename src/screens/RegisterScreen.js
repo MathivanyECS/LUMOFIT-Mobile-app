@@ -89,6 +89,10 @@ const RegisterScreen = () => {
   };
 
   const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
 
     const userData = {
       fullName,
@@ -99,24 +103,11 @@ const RegisterScreen = () => {
       gender,
     };
 
-    const { success, error } = await register(userData); // Call register function
-    if (success) {
-      navigation.replace('Dashboard'); // Navigate to Dashboard after successful registration
-    } else {
-      alert(error); // Show error if registration fails
-    }
-
-   
-
     try {
       const result = await register(userData);
-      if (!result.success) {
-        Alert.alert('Registration Failed', result.error);
+      if (result.success) {
       } else {
-        // If AuthContext doesn't handle success state, we'll manage it locally
-        if (registrationSuccess === undefined) {
-          setLocalRegistrationSuccess(true);
-        }
+        Alert.alert('Registration Failed', result.error || 'Unknown error');
       }
     } catch (error) {
       Alert.alert('Registration Failed', error.message || 'An unexpected error occurred');
@@ -124,7 +115,6 @@ const RegisterScreen = () => {
   };
 
   const handleLoginRedirect = () => {
-    // Clear success state
     if (clearRegistrationSuccess) {
       clearRegistrationSuccess();
     } else {
@@ -134,7 +124,6 @@ const RegisterScreen = () => {
   };
 
   const handleCloseSuccess = () => {
-    // Clear success state
     if (clearRegistrationSuccess) {
       clearRegistrationSuccess();
     } else {
@@ -142,9 +131,6 @@ const RegisterScreen = () => {
     }
   };
 
-
-
-  // Determine which success state to use (from context or local)
   const showSuccessModal = registrationSuccess !== undefined ? registrationSuccess : localRegistrationSuccess;
 
   return (

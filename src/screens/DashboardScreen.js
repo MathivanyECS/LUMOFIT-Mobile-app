@@ -10,12 +10,14 @@ import {
   StatusBar,
   Modal,
   TextInput,
-  Alert
+  Alert,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { ROUTES } from '../constants/routes';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const DashboardScreen = ({ navigation, route }) => {
@@ -24,7 +26,7 @@ const DashboardScreen = ({ navigation, route }) => {
   const [isDeviceModalVisible, setDeviceModalVisible] = useState(false);
   const [isPatientModalVisible, setPatientModalVisible] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState('');
-  
+
   // Patient form states
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
@@ -45,11 +47,11 @@ const DashboardScreen = ({ navigation, route }) => {
     try {
       const savedDevices = await AsyncStorage.getItem('connectedDevices');
       const savedPatients = await AsyncStorage.getItem('patients');
-     
+
       if (savedDevices) {
         setConnectedDevices(JSON.parse(savedDevices));
       }
-     
+
       if (savedPatients) {
         setPatients(JSON.parse(savedPatients));
       }
@@ -68,7 +70,7 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-   
+
     if (permissionResult.granted === false) {
       Alert.alert('Permission Required', 'You need to grant camera roll permissions to upload images.');
       return;
@@ -95,7 +97,7 @@ const DashboardScreen = ({ navigation, route }) => {
     const newDevice = {
       id: Date.now().toString(),
       name: newDeviceName,
-      connectedSince: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      connectedSince: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     };
 
     const updatedDevices = [...connectedDevices, newDevice];
@@ -117,12 +119,16 @@ const DashboardScreen = ({ navigation, route }) => {
       age: patientAge,
       gender: patientGender,
       avatar: patientAvatar,
-      birthDate: birthDate.toISOString(),
+      birthDate: birthDate ? birthDate.toISOString().split('T')[0] : null, // format: YYYY-MM-DD
       medicalCondition,
       bloodType,
       emergencyContact,
-      addedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      isActive: true
+      addedOn: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      isActive: true,
     };
 
     const updatedPatients = [...patients, newPatient];
@@ -144,12 +150,14 @@ const DashboardScreen = ({ navigation, route }) => {
   };
 
   const onChangeBirthDate = (event, selectedDate) => {
-    const currentDate = selectedDate || birthDate;
-    setShowDatePicker(Platform.OS === 'ios');
-    setBirthDate(currentDate);
-    
-    // Calculate age based on birthdate
+    console.log('Date selected:', selectedDate);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
     if (selectedDate) {
+      setBirthDate(selectedDate);
+
+      // Calculate age based on birthdate
       const today = new Date();
       let age = today.getFullYear() - selectedDate.getFullYear();
       const m = today.getMonth() - selectedDate.getMonth();
@@ -161,25 +169,25 @@ const DashboardScreen = ({ navigation, route }) => {
   };
 
   const removeDevice = (id) => {
-    const updatedDevices = connectedDevices.filter(device => device.id !== id);
+    const updatedDevices = connectedDevices.filter((device) => device.id !== id);
     setConnectedDevices(updatedDevices);
     saveData('connectedDevices', updatedDevices);
   };
 
   const removePatient = (id) => {
-    const updatedPatients = patients.filter(patient => patient.id !== id);
+    const updatedPatients = patients.filter((patient) => patient.id !== id);
     setPatients(updatedPatients);
     saveData('patients', updatedPatients);
   };
 
   const togglePatientStatus = (id) => {
-    const updatedPatients = patients.map(patient => {
+    const updatedPatients = patients.map((patient) => {
       if (patient.id === id) {
         return { ...patient, isActive: !patient.isActive };
       }
       return patient;
     });
-   
+
     setPatients(updatedPatients);
     saveData('patients', updatedPatients);
   };
@@ -190,26 +198,16 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const renderGenderSelection = () => {
     const genders = ['Male', 'Female', 'Other'];
-    
+
     return (
       <View style={styles.genderContainer}>
         {genders.map((gender) => (
           <TouchableOpacity
             key={gender}
-            style={[
-              styles.genderOption,
-              patientGender === gender && styles.selectedGender
-            ]}
+            style={[styles.genderOption, patientGender === gender && styles.selectedGender]}
             onPress={() => setPatientGender(gender)}
           >
-            <Text 
-              style={[
-                styles.genderText,
-                patientGender === gender && styles.selectedGenderText
-              ]}
-            >
-              {gender}
-            </Text>
+            <Text style={[styles.genderText, patientGender === gender && styles.selectedGenderText]}>{gender}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -218,26 +216,16 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const renderBloodTypeSelection = () => {
     const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-    
+
     return (
       <View style={styles.bloodTypeContainer}>
         {bloodTypes.map((type) => (
           <TouchableOpacity
             key={type}
-            style={[
-              styles.bloodTypeOption,
-              bloodType === type && styles.selectedBloodType
-            ]}
+            style={[styles.bloodTypeOption, bloodType === type && styles.selectedBloodType]}
             onPress={() => setBloodType(type)}
           >
-            <Text 
-              style={[
-                styles.bloodTypeText,
-                bloodType === type && styles.selectedBloodTypeText
-              ]}
-            >
-              {type}
-            </Text>
+            <Text style={[styles.bloodTypeText, bloodType === type && styles.selectedBloodTypeText]}>{type}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -247,7 +235,7 @@ const DashboardScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-     
+
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.welcomeContainer}>
@@ -255,7 +243,7 @@ const DashboardScreen = ({ navigation, route }) => {
             <Text style={styles.username}>JohnDoe123</Text>
           </View>
         </View>
-       
+
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="notifications-outline" size={24} color="#000" />
@@ -265,23 +253,20 @@ const DashboardScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </View>
-     
+
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Connected Devices</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setDeviceModalVisible(true)}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => setDeviceModalVisible(true)}>
               <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
             </TouchableOpacity>
           </View>
-         
+
           {connectedDevices.length === 0 ? (
             <Text style={styles.emptyListText}>No devices connected. Tap + to add a device.</Text>
           ) : (
-            connectedDevices.map(device => (
+            connectedDevices.map((device) => (
               <View key={device.id} style={styles.deviceCard}>
                 <View style={styles.deviceLeftSection}>
                   <View style={styles.deviceIconContainer}>
@@ -292,7 +277,7 @@ const DashboardScreen = ({ navigation, route }) => {
                     <Text style={styles.deviceDate}>Connected since: {device.connectedSince}</Text>
                   </View>
                 </View>
-               
+
                 <TouchableOpacity onPress={() => removeDevice(device.id)}>
                   <Ionicons name="trash-outline" size={20} color="#ff3b30" />
                 </TouchableOpacity>
@@ -300,24 +285,21 @@ const DashboardScreen = ({ navigation, route }) => {
             ))
           )}
         </View>
-       
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Patients</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setPatientModalVisible(true)}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={() => setPatientModalVisible(true)}>
               <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
             </TouchableOpacity>
           </View>
-         
+
           {patients.length === 0 ? (
             <Text style={styles.emptyListText}>No patients added. Tap + to add a patient.</Text>
           ) : (
-            patients.map(patient => (
-              <TouchableOpacity 
-                key={patient.id} 
+            patients.map((patient) => (
+              <TouchableOpacity
+                key={patient.id}
                 style={styles.userCard}
                 onPress={() => navigateToPatientDetails(patient)}
               >
@@ -336,7 +318,7 @@ const DashboardScreen = ({ navigation, route }) => {
                     </Text>
                   </View>
                 </View>
-               
+
                 <View style={styles.userRightSection}>
                   <TouchableOpacity
                     style={[styles.statusBadge, patient.isActive ? styles.activeBadge : styles.offlineBadge]}
@@ -349,7 +331,7 @@ const DashboardScreen = ({ navigation, route }) => {
                       {patient.isActive ? 'Active' : 'Offline'}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
                       removePatient(patient.id);
@@ -365,22 +347,18 @@ const DashboardScreen = ({ navigation, route }) => {
       </ScrollView>
 
       {/* Add Device Modal */}
-      <Modal
-        visible={isDeviceModalVisible}
-        transparent={true}
-        animationType="slide"
-      >
+      <Modal visible={isDeviceModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add New Device</Text>
-           
+
             <TextInput
               style={styles.input}
               placeholder="Device Name"
               value={newDeviceName}
               onChangeText={setNewDeviceName}
             />
-           
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -391,11 +369,8 @@ const DashboardScreen = ({ navigation, route }) => {
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-             
-              <TouchableOpacity
-                style={[styles.modalButton, styles.addButtonModal]}
-                onPress={addNewDevice}
-              >
+
+              <TouchableOpacity style={[styles.modalButton, styles.addButtonModal]} onPress={addNewDevice}>
                 <Text style={styles.buttonText}>Add</Text>
               </TouchableOpacity>
             </View>
@@ -404,16 +379,12 @@ const DashboardScreen = ({ navigation, route }) => {
       </Modal>
 
       {/* Add Patient Modal */}
-      <Modal
-        visible={isPatientModalVisible}
-        transparent={true}
-        animationType="slide"
-      >
+      <Modal visible={isPatientModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.patientModalContent}>
             <ScrollView>
               <Text style={styles.modalTitle}>Add New Patient</Text>
-             
+
               <TouchableOpacity style={styles.avatarPicker} onPress={pickImage}>
                 {patientAvatar ? (
                   <Image source={{ uri: patientAvatar }} style={styles.pickedAvatar} />
@@ -424,7 +395,7 @@ const DashboardScreen = ({ navigation, route }) => {
                   </View>
                 )}
               </TouchableOpacity>
-             
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Full Name</Text>
                 <TextInput
@@ -434,34 +405,32 @@ const DashboardScreen = ({ navigation, route }) => {
                   onChangeText={setPatientName}
                 />
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Date of Birth</Text>
-                <TouchableOpacity 
-                  style={styles.datePickerButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
+                <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
                   <Text style={styles.dateText}>
-                    {birthDate.toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {birthDate.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
                     })}
                   </Text>
                   <Ionicons name="calendar" size={24} color={COLORS.secondary} />
                 </TouchableOpacity>
-                
+
                 {showDatePicker && (
                   <DateTimePicker
+                    testID="dateTimePicker"
                     value={birthDate}
                     mode="date"
-                    display="default"
+                    display="spinner"
                     onChange={onChangeBirthDate}
                     maximumDate={new Date()}
                   />
                 )}
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Age</Text>
                 <TextInput
@@ -473,17 +442,17 @@ const DashboardScreen = ({ navigation, route }) => {
                   editable={false}
                 />
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Gender</Text>
                 {renderGenderSelection()}
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Blood Type</Text>
                 {renderBloodTypeSelection()}
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Medical Condition</Text>
                 <TextInput
@@ -495,7 +464,7 @@ const DashboardScreen = ({ navigation, route }) => {
                   numberOfLines={4}
                 />
               </View>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Emergency Contact</Text>
                 <TextInput
@@ -517,11 +486,8 @@ const DashboardScreen = ({ navigation, route }) => {
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
-               
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.addButtonModal]}
-                  onPress={addNewPatient}
-                >
+
+                <TouchableOpacity style={[styles.modalButton, styles.addButtonModal]} onPress={addNewPatient}>
                   <Text style={styles.buttonText}>Add</Text>
                 </TouchableOpacity>
               </View>
