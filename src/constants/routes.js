@@ -1,12 +1,13 @@
-// Constants/routes.js
 export const ROUTES = {
   SPLASH: 'Splash',
   LOGIN: 'Login',
   REGISTER: 'Register',
   DASHBOARD: 'Dashboard',
-  MAIN_TABS: 'MainTabs',
   HEALTH_DETAIL: 'HealthDetail',
-  VIEW_VITALS: 'ViewVitals',
   CALL_EMERGENCY: 'CallEmergency',
+  VIEW_VITALS: 'ViewVitals',
+  MAIN_TABS: 'MainTabs',
   ALERTS: 'Alerts',
+  ADD_PATIENT: 'AddPatient',
+  PATIENTS: 'Patients'
 };

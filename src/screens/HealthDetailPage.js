@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-console.log('Patient data:', patient);
-
+import IconPlaceholder from '../components/IconPlaceholder';
 
 const HealthDetailPage = ({ route, navigation }) => {
   const { patient } = route.params;
+  console.log('Patient data:', patient);
   const [healthData, setHealthData] = useState({
     heartRate: {
       value: 75,
@@ -55,10 +55,7 @@ const HealthDetailPage = ({ route, navigation }) => {
       {/* Patient Profile */}
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
-        <Image 
-  source={patient.photo ? patient.photo : require('../assets/default-user.png')} 
-  style={styles.profileImage}
-/>
+          <IconPlaceholder size={50} iconName="person" style={styles.profileImage} />
 
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{patient.name}</Text>
@@ -437,4 +434,3 @@ const styles = StyleSheet.create({
 });
 
 export default HealthDetailPage;
-

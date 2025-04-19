@@ -16,41 +16,47 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const DashboardScreen = ({ navigation, route }) => {
   const [connectedDevices, setConnectedDevices] = useState([]);
-  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [isDeviceModalVisible, setDeviceModalVisible] = useState(false);
-  const [isUserModalVisible, setUserModalVisible] = useState(false);
+  const [isPatientModalVisible, setPatientModalVisible] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState('');
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserAvatar, setNewUserAvatar] = useState(null);
-
+  
+  // Patient form states
+  const [patientName, setPatientName] = useState('');
+  const [patientAge, setPatientAge] = useState('');
+  const [patientGender, setPatientGender] = useState('');
+  const [patientAvatar, setPatientAvatar] = useState(null);
+  const [birthDate, setBirthDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [medicalCondition, setMedicalCondition] = useState('');
+  const [bloodType, setBloodType] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
 
   // Load saved data on component mount
   useEffect(() => {
     loadSavedData();
   }, []);
 
-
   const loadSavedData = async () => {
     try {
       const savedDevices = await AsyncStorage.getItem('connectedDevices');
-      const savedUsers = await AsyncStorage.getItem('connectedUsers');
+      const savedPatients = await AsyncStorage.getItem('patients');
      
       if (savedDevices) {
         setConnectedDevices(JSON.parse(savedDevices));
       }
      
-      if (savedUsers) {
-        setConnectedUsers(JSON.parse(savedUsers));
+      if (savedPatients) {
+        setPatients(JSON.parse(savedPatients));
       }
     } catch (error) {
       console.error('Error loading saved data:', error);
     }
   };
-
 
   const saveData = async (key, data) => {
     try {
@@ -60,7 +66,6 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   };
 
-
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
    
@@ -69,7 +74,6 @@ const DashboardScreen = ({ navigation, route }) => {
       return;
     }
 
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -77,12 +81,10 @@ const DashboardScreen = ({ navigation, route }) => {
       quality: 0.8,
     });
 
-
     if (!result.canceled) {
-      setNewUserAvatar(result.assets[0].uri);
+      setPatientAvatar(result.assets[0].uri);
     }
   };
-
 
   const addNewDevice = () => {
     if (newDeviceName.trim() === '') {
@@ -90,13 +92,11 @@ const DashboardScreen = ({ navigation, route }) => {
       return;
     }
 
-
     const newDevice = {
       id: Date.now().toString(),
       name: newDeviceName,
       connectedSince: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     };
-
 
     const updatedDevices = [...connectedDevices, newDevice];
     setConnectedDevices(updatedDevices);
@@ -105,31 +105,60 @@ const DashboardScreen = ({ navigation, route }) => {
     setDeviceModalVisible(false);
   };
 
-
-  const addNewUser = () => {
-    if (newUserName.trim() === '') {
-      Alert.alert('Input Required', 'Please enter a user name');
+  const addNewPatient = () => {
+    if (patientName.trim() === '') {
+      Alert.alert('Input Required', 'Please enter patient name');
       return;
     }
 
-
-    const newUser = {
+    const newPatient = {
       id: Date.now().toString(),
-      name: newUserName,
-      connectedSince: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      avatar: newUserAvatar,
+      name: patientName,
+      age: patientAge,
+      gender: patientGender,
+      avatar: patientAvatar,
+      birthDate: birthDate.toISOString(),
+      medicalCondition,
+      bloodType,
+      emergencyContact,
+      addedOn: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       isActive: true
     };
 
-
-    const updatedUsers = [...connectedUsers, newUser];
-    setConnectedUsers(updatedUsers);
-    saveData('connectedUsers', updatedUsers);
-    setNewUserName('');
-    setNewUserAvatar(null);
-    setUserModalVisible(false);
+    const updatedPatients = [...patients, newPatient];
+    setPatients(updatedPatients);
+    saveData('patients', updatedPatients);
+    resetPatientForm();
+    setPatientModalVisible(false);
   };
 
+  const resetPatientForm = () => {
+    setPatientName('');
+    setPatientAge('');
+    setPatientGender('');
+    setPatientAvatar(null);
+    setBirthDate(new Date());
+    setMedicalCondition('');
+    setBloodType('');
+    setEmergencyContact('');
+  };
+
+  const onChangeBirthDate = (event, selectedDate) => {
+    const currentDate = selectedDate || birthDate;
+    setShowDatePicker(Platform.OS === 'ios');
+    setBirthDate(currentDate);
+    
+    // Calculate age based on birthdate
+    if (selectedDate) {
+      const today = new Date();
+      let age = today.getFullYear() - selectedDate.getFullYear();
+      const m = today.getMonth() - selectedDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < selectedDate.getDate())) {
+        age--;
+      }
+      setPatientAge(age.toString());
+    }
+  };
 
   const removeDevice = (id) => {
     const updatedDevices = connectedDevices.filter(device => device.id !== id);
@@ -137,26 +166,83 @@ const DashboardScreen = ({ navigation, route }) => {
     saveData('connectedDevices', updatedDevices);
   };
 
-
-  const removeUser = (id) => {
-    const updatedUsers = connectedUsers.filter(user => user.id !== id);
-    setConnectedUsers(updatedUsers);
-    saveData('connectedUsers', updatedUsers);
+  const removePatient = (id) => {
+    const updatedPatients = patients.filter(patient => patient.id !== id);
+    setPatients(updatedPatients);
+    saveData('patients', updatedPatients);
   };
 
-
-  const toggleUserStatus = (id) => {
-    const updatedUsers = connectedUsers.map(user => {
-      if (user.id === id) {
-        return { ...user, isActive: !user.isActive };
+  const togglePatientStatus = (id) => {
+    const updatedPatients = patients.map(patient => {
+      if (patient.id === id) {
+        return { ...patient, isActive: !patient.isActive };
       }
-      return user;
+      return patient;
     });
    
-    setConnectedUsers(updatedUsers);
-    saveData('connectedUsers', updatedUsers);
+    setPatients(updatedPatients);
+    saveData('patients', updatedPatients);
   };
 
+  const navigateToPatientDetails = (patient) => {
+    navigation.navigate('HealthDetail', { patient });
+  };
+
+  const renderGenderSelection = () => {
+    const genders = ['Male', 'Female', 'Other'];
+    
+    return (
+      <View style={styles.genderContainer}>
+        {genders.map((gender) => (
+          <TouchableOpacity
+            key={gender}
+            style={[
+              styles.genderOption,
+              patientGender === gender && styles.selectedGender
+            ]}
+            onPress={() => setPatientGender(gender)}
+          >
+            <Text 
+              style={[
+                styles.genderText,
+                patientGender === gender && styles.selectedGenderText
+              ]}
+            >
+              {gender}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderBloodTypeSelection = () => {
+    const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    
+    return (
+      <View style={styles.bloodTypeContainer}>
+        {bloodTypes.map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.bloodTypeOption,
+              bloodType === type && styles.selectedBloodType
+            ]}
+            onPress={() => setBloodType(type)}
+          >
+            <Text 
+              style={[
+                styles.bloodTypeText,
+                bloodType === type && styles.selectedBloodTypeText
+              ]}
+            >
+              {type}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,7 +250,6 @@ const DashboardScreen = ({ navigation, route }) => {
      
       <View style={styles.header}>
         <View style={styles.userInfo}>
-        
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>Hello,</Text>
             <Text style={styles.username}>JohnDoe123</Text>
@@ -218,53 +303,66 @@ const DashboardScreen = ({ navigation, route }) => {
        
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Connected LUMOFIT Users</Text>
+            <Text style={styles.sectionTitle}>Patients</Text>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => setUserModalVisible(true)}
+              onPress={() => setPatientModalVisible(true)}
             >
               <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
             </TouchableOpacity>
           </View>
          
-          {connectedUsers.length === 0 ? (
-            <Text style={styles.emptyListText}>No users connected. Tap + to add a user.</Text>
+          {patients.length === 0 ? (
+            <Text style={styles.emptyListText}>No patients added. Tap + to add a patient.</Text>
           ) : (
-            connectedUsers.map(user => (
-              <View key={user.id} style={styles.userCard}>
+            patients.map(patient => (
+              <TouchableOpacity 
+                key={patient.id} 
+                style={styles.userCard}
+                onPress={() => navigateToPatientDetails(patient)}
+              >
                 <View style={styles.userLeftSection}>
-                  {user.avatar ? (
-                    <Image source={{ uri: user.avatar }} style={styles.userCardAvatar} />
+                  {patient.avatar ? (
+                    <Image source={{ uri: patient.avatar }} style={styles.userCardAvatar} />
                   ) : (
                     <View style={[styles.userCardAvatar, styles.placeholderAvatar]}>
-                      <Text style={styles.placeholderText}>{user.name.charAt(0)}</Text>
+                      <Text style={styles.placeholderText}>{patient.name.charAt(0)}</Text>
                     </View>
                   )}
                   <View style={styles.userCardInfo}>
-                    <Text style={styles.userName}>{user.name}</Text>
-                    <Text style={styles.userDate}>Connected since: {user.connectedSince}</Text>
+                    <Text style={styles.userName}>{patient.name}</Text>
+                    <Text style={styles.userDate}>
+                      {patient.age} yrs • {patient.gender} • {patient.bloodType || 'Unknown Blood Type'}
+                    </Text>
                   </View>
                 </View>
                
                 <View style={styles.userRightSection}>
                   <TouchableOpacity
-                    style={[styles.statusBadge, user.isActive ? styles.activeBadge : styles.offlineBadge]}
-                    onPress={() => toggleUserStatus(user.id)}
+                    style={[styles.statusBadge, patient.isActive ? styles.activeBadge : styles.offlineBadge]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      togglePatientStatus(patient.id);
+                    }}
                   >
-                    <Text style={[styles.statusText, user.isActive ? styles.activeText : styles.offlineText]}>
-                      {user.isActive ? 'Active' : 'Offline'}
+                    <Text style={[styles.statusText, patient.isActive ? styles.activeText : styles.offlineText]}>
+                      {patient.isActive ? 'Active' : 'Offline'}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => removeUser(user.id)}>
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      removePatient(patient.id);
+                    }}
+                  >
                     <Ionicons name="trash-outline" size={20} color="#ff3b30" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
-
 
       {/* Add Device Modal */}
       <Modal
@@ -305,61 +403,135 @@ const DashboardScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-
-      {/* Add User Modal */}
+      {/* Add Patient Modal */}
       <Modal
-        visible={isUserModalVisible}
+        visible={isPatientModalVisible}
         transparent={true}
         animationType="slide"
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New User</Text>
-           
-            <TouchableOpacity style={styles.avatarPicker} onPress={pickImage}>
-              {newUserAvatar ? (
-                <Image source={{ uri: newUserAvatar }} style={styles.pickedAvatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="camera" size={32} color="#999" />
-                  <Text style={styles.avatarText}>Add Photo</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-           
-            <TextInput
-              style={styles.input}
-              placeholder="User Name"
-              value={newUserName}
-              onChangeText={setNewUserName}
-            />
-           
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setNewUserName('');
-                  setNewUserAvatar(null);
-                  setUserModalVisible(false);
-                }}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
+          <View style={styles.patientModalContent}>
+            <ScrollView>
+              <Text style={styles.modalTitle}>Add New Patient</Text>
+             
+              <TouchableOpacity style={styles.avatarPicker} onPress={pickImage}>
+                {patientAvatar ? (
+                  <Image source={{ uri: patientAvatar }} style={styles.pickedAvatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person-add" size={32} color="#999" />
+                    <Text style={styles.avatarText}>Add Photo</Text>
+                  </View>
+                )}
               </TouchableOpacity>
              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.addButtonModal]}
-                onPress={addNewUser}
-              >
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter patient's full name"
+                  value={patientName}
+                  onChangeText={setPatientName}
+                />
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Date of Birth</Text>
+                <TouchableOpacity 
+                  style={styles.datePickerButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateText}>
+                    {birthDate.toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </Text>
+                  <Ionicons name="calendar" size={24} color={COLORS.secondary} />
+                </TouchableOpacity>
+                
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={birthDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeBirthDate}
+                    maximumDate={new Date()}
+                  />
+                )}
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Age</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Age (calculated from DOB)"
+                  value={patientAge}
+                  onChangeText={setPatientAge}
+                  keyboardType="numeric"
+                  editable={false}
+                />
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Gender</Text>
+                {renderGenderSelection()}
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Blood Type</Text>
+                {renderBloodTypeSelection()}
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Medical Condition</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Enter medical conditions, allergies, etc."
+                  value={medicalCondition}
+                  onChangeText={setMedicalCondition}
+                  multiline={true}
+                  numberOfLines={4}
+                />
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Emergency Contact</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Emergency contact number"
+                  value={emergencyContact}
+                  onChangeText={setEmergencyContact}
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    resetPatientForm();
+                    setPatientModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+               
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.addButtonModal]}
+                  onPress={addNewPatient}
+                >
+                  <Text style={styles.buttonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -550,11 +722,19 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
+  patientModalContent: {
+    width: '90%',
+    maxHeight: '90%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 20,
     color: '#333',
+    textAlign: 'center',
   },
   input: {
     width: '100%',
@@ -563,12 +743,18 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 12,
-    marginBottom: 20,
+  },
+  textArea: {
+    height: 100,
+    paddingTop: 12,
+    textAlignVertical: 'top',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: 20,
+    marginBottom: 10,
   },
   modalButton: {
     flex: 1,
@@ -595,6 +781,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 20,
     overflow: 'hidden',
+    alignSelf: 'center',
   },
   avatarPlaceholder: {
     width: '100%',
@@ -617,7 +804,85 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 50,
   },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  genderOption: {
+    flex: 1,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  selectedGender: {
+    borderColor: COLORS.secondary,
+    backgroundColor: '#e6f7ef',
+  },
+  genderText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  selectedGenderText: {
+    color: COLORS.secondary,
+    fontWeight: '600',
+  },
+  bloodTypeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  bloodTypeOption: {
+    width: '23%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    margin: '1%',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  selectedBloodType: {
+    borderColor: COLORS.secondary,
+    backgroundColor: '#e6f7ef',
+  },
+  bloodTypeText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  selectedBloodTypeText: {
+    color: COLORS.secondary,
+    fontWeight: '600',
+  },
+  datePickerButton: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#333',
+  },
 });
-
 
 export default DashboardScreen;

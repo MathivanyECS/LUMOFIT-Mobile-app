@@ -44,12 +44,11 @@ const LoginScreen = ({ navigation }) => {
      
       console.log(' Login successful, navigating to main tabs');
   
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: ROUTES.MAIN_TABS }],  // Redirect to DashboardScreen after login
-        })
-      );
+      navigation.reset({
+        index: 0,
+        routes: [{ name: ROUTES.MAIN_TABS }],
+      });
+      
       
     } else {
       alert(error || 'Login failed. Please try again.');

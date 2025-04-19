@@ -14,6 +14,7 @@ import HealthDetailPage from '../screens/HealthDetailPage';
 import CallEmergencyScreen from '../screens/CallEmergencyScreen';
 import ViewVitalsScreen from '../screens/ViewVitalsScreen';
 import AlertsScreen from '../screens/AlertsScreen';
+import AddPatientScreen from '../screens/AddPatientScreen';
 
 // Import AuthContext
 import { AuthContext, AuthProvider } from '../Context/AuthProvider';
@@ -33,6 +34,8 @@ const MainTabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === ROUTES.ALERTS) {
             iconName = focused ? 'notifications' : 'notifications-outline';
+          } else if (route.name === ROUTES.PATIENTS) {
+            iconName = focused ? 'people' : 'people-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -82,6 +85,7 @@ const AppNavigator = () => {
       <Stack.Screen name={ROUTES.HEALTH_DETAIL} component={HealthDetailPage} />
       <Stack.Screen name={ROUTES.VIEW_VITALS} component={ViewVitalsScreen} />
       <Stack.Screen name={ROUTES.CALL_EMERGENCY} component={CallEmergencyScreen} />
+      <Stack.Screen name={ROUTES.ADD_PATIENT} component={AddPatientScreen} />
     </Stack.Navigator>
   );
 };
