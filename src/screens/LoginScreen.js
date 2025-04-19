@@ -26,7 +26,7 @@ const LoginScreen = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!username) newErrors.username = 'username is required';
+    if (!username) newErrors.username = 'username is must required';
     else if (!/\S+@\S+\.\S+/.test(username)) newErrors.username = 'username is invalid';
     
     if (!password) newErrors.password = 'Password is required';
