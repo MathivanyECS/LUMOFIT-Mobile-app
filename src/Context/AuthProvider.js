@@ -1,8 +1,8 @@
+// ... All existing imports
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-// Create API instance
 const api = axios.create({
   baseURL: 'https://lmaqkr3i16.execute-api.us-east-1.amazonaws.com',
   headers: {
@@ -10,7 +10,7 @@ const api = axios.create({
   }
 });
 
-// Add request interceptor for auth token
+// Add request interceptor
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('userToken');
@@ -22,17 +22,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Create the Authentication Context
+// Create Context
 export const AuthContext = createContext();
 
-// Auth Provider Component
+// Auth Provider
 export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [currentUser,setCurrentUser] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  
-  // Function to clear AsyncStorage (useful for debugging)
+
   const clearStorage = async () => {
     try {
       await AsyncStorage.removeItem('userToken');
@@ -43,15 +43,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check if user is logged in on app start
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('userToken');
         const storedUserData = await AsyncStorage.getItem('userData');
-        
+
         if (storedToken && storedUserData) {
-          // Validate token with backend
           try {
             api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
             const response = await api.get('/auth/verify');
@@ -59,16 +57,14 @@ export const AuthProvider = ({ children }) => {
               setUserToken(storedToken);
               setUserData(JSON.parse(storedUserData));
             } else {
-              // Token invalid, clear storage
               clearStorage();
             }
           } catch (error) {
             console.log('Token validation error:', error);
             clearStorage();
           }
-        }
-        else {
-          setUserToken(null); // Ensure token is reset if not found
+        } else {
+          setUserToken(null);
         }
       } catch (error) {
         console.log('Error restoring auth state:', error);
@@ -76,37 +72,31 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false);
       }
     };
+
     bootstrapAsync();
   }, []);
 
-  // Auth functions
   const login = async (username, password) => {
     setIsLoading(true);
     try {
-      // Call to backend API
       const response = await api.post('/login', {
         username,
-        password,  
+        password,
       });
-  
-      console.log("Login response:", response.data); // Keep this for debugging
-      
-      // Check if response contains the required fields
+
       if (!response.data || !response.data.token) {
-        console.error("Login failed: No token received in response");
         throw new Error("Login failed: No token received.");
       }
-      
+
       const { user, token } = response.data;
-      
-      // Store auth info - ensure token is a string
+
       await AsyncStorage.setItem('userToken', token.toString());
       await AsyncStorage.setItem('userData', JSON.stringify(user));
-      
-      // Update state
+
       setUserToken(token);
       setUserData(user);
-      
+      setCurrentUser(user.nickname);
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error.response?.data || error.message);
@@ -122,16 +112,15 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setIsLoading(true);
     try {
-      // Call to backend API
       const response = await api.post('/register', {
         userData
       });
 
-      setUserData(response.data.user);
-      
-      return { 
+      setRegistrationSuccess(true);
+      setUserToken(true);
+      console.log("registration Success " + registrationSuccess)
+      return {
         success: true,
-        user: response.data.user
       };
     } catch (error) {
       console.log('Registration error:', error.response?.data || error.message);
@@ -144,17 +133,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ New function: Register Patient
+  const registerPatient = async (patientData) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/savePatientData', patientData);
+
+      console.log('Patient registration response:', response.data);
+
+      return {
+        success: true,
+        patient: response.data.patient,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Patient registration error:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Patient registration failed.',
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
-      // Optional: notify backend about logout
       try {
         await api.post('/auth/logout');
       } catch (logoutError) {
         console.log('Backend logout notification failed:', logoutError);
-        // Continue with local logout even if backend notification fails
       }
-      
+
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
       setUserToken(null);
@@ -167,16 +178,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearRegistrationSuccess = () => {
-    setRegistrationSuccess(false);
+    setRegistrationSuccess('false');
   };
 
   const authContext = {
     isLoading,
     userToken,
+    currentUser,
     userData,
     registrationSuccess,
     login,
     register,
+    registerPatient, // ✅ Added patient registration
     logout,
     clearStorage,
     clearRegistrationSuccess,

@@ -10,11 +10,10 @@ import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
-import HealthDetailPage from '../screens/HealthDetailPage';
 import CallEmergencyScreen from '../screens/CallEmergencyScreen';
 import ViewVitalsScreen from '../screens/ViewVitalsScreen';
 import AlertsScreen from '../screens/AlertsScreen';
-import AddPatientScreen from '../screens/AddPatientScreen';
+import HealthDetailWrapper from '../screens/HealthDetailWrapper';
 
 // Import AuthContext
 import { AuthContext, AuthProvider } from '../Context/AuthProvider';
@@ -37,7 +36,7 @@ const MainTabNavigator = () => {
           } else if (route.name === ROUTES.PATIENTS) {
             iconName = focused ? 'people' : 'people-outline';
           }
-
+          
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: COLORS.primary,
@@ -60,7 +59,7 @@ const AppNavigator = () => {
   const { userToken, isLoading } = useContext(AuthContext); // Get userToken from AuthContext
 
   if (isLoading) {
-    return null; // You can replace this with a loading screen if needed
+    return "hello"; // You can replace this with a loading screen if needed
   }
 
   return (
@@ -82,10 +81,10 @@ const AppNavigator = () => {
       )}
       
       {/* Additional screens accessible after login */}
-      <Stack.Screen name={ROUTES.HEALTH_DETAIL} component={HealthDetailPage} />
+      <Stack.Screen name={ROUTES.HEALTH_DETAIL} component={HealthDetailWrapper} />
       <Stack.Screen name={ROUTES.VIEW_VITALS} component={ViewVitalsScreen} />
       <Stack.Screen name={ROUTES.CALL_EMERGENCY} component={CallEmergencyScreen} />
-      <Stack.Screen name={ROUTES.ADD_PATIENT} component={AddPatientScreen} />
+     
     </Stack.Navigator>
   );
 };

@@ -19,13 +19,15 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { ROUTES } from '../constants/routes';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useContext } from 'react';
+import { AuthContext } from '../Context/AuthProvider';
+
+
+
 
 const DashboardScreen = ({ navigation, route }) => {
-  const [connectedDevices, setConnectedDevices] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [isDeviceModalVisible, setDeviceModalVisible] = useState(false);
   const [isPatientModalVisible, setPatientModalVisible] = useState(false);
-  const [newDeviceName, setNewDeviceName] = useState('');
 
   // Patient form states
   const [patientName, setPatientName] = useState('');
@@ -37,6 +39,8 @@ const DashboardScreen = ({ navigation, route }) => {
   const [medicalCondition, setMedicalCondition] = useState('');
   const [bloodType, setBloodType] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
+  const { registerPatient,currentUser } = useContext(AuthContext);
+
 
   // Load saved data on component mount
   useEffect(() => {
@@ -45,12 +49,7 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const loadSavedData = async () => {
     try {
-      const savedDevices = await AsyncStorage.getItem('connectedDevices');
       const savedPatients = await AsyncStorage.getItem('patients');
-
-      if (savedDevices) {
-        setConnectedDevices(JSON.parse(savedDevices));
-      }
 
       if (savedPatients) {
         setPatients(JSON.parse(savedPatients));
@@ -88,54 +87,36 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   };
 
-  const addNewDevice = () => {
-    if (newDeviceName.trim() === '') {
-      Alert.alert('Input Required', 'Please enter a device name');
-      return;
-    }
 
-    const newDevice = {
-      id: Date.now().toString(),
-      name: newDeviceName,
-      connectedSince: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    };
+  
 
-    const updatedDevices = [...connectedDevices, newDevice];
-    setConnectedDevices(updatedDevices);
-    saveData('connectedDevices', updatedDevices);
-    setNewDeviceName('');
-    setDeviceModalVisible(false);
-  };
-
-  const addNewPatient = () => {
+  const addNewPatient = async () => {
     if (patientName.trim() === '') {
       Alert.alert('Input Required', 'Please enter patient name');
       return;
     }
-
+  
     const newPatient = {
-      id: Date.now().toString(),
-      name: patientName,
+      fullName: patientName,
       age: patientAge,
       gender: patientGender,
-      avatar: patientAvatar,
-      birthDate: birthDate ? birthDate.toISOString().split('T')[0] : null, // format: YYYY-MM-DD
+      avatar: patientAvatar || '',
+      birthDate: birthDate.toISOString().split('T')[0],
       medicalCondition,
       bloodType,
       emergencyContact,
-      addedOn: new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      isActive: true,
     };
-
-    const updatedPatients = [...patients, newPatient];
-    setPatients(updatedPatients);
-    saveData('patients', updatedPatients);
-    resetPatientForm();
-    setPatientModalVisible(false);
+  
+    const result = await registerPatient(newPatient);
+  
+    if (result.success) {
+      setPatients([...patients, result.patient]);
+      saveData('patients', [...patients, result.patient]);
+      resetPatientForm();
+      setPatientModalVisible(false);
+    } else {
+      Alert.alert('Error', result.error || 'Failed to register patient.');
+    }
   };
 
   const resetPatientForm = () => {
@@ -166,12 +147,6 @@ const DashboardScreen = ({ navigation, route }) => {
       }
       setPatientAge(age.toString());
     }
-  };
-
-  const removeDevice = (id) => {
-    const updatedDevices = connectedDevices.filter((device) => device.id !== id);
-    setConnectedDevices(updatedDevices);
-    saveData('connectedDevices', updatedDevices);
   };
 
   const removePatient = (id) => {
@@ -231,6 +206,7 @@ const DashboardScreen = ({ navigation, route }) => {
       </View>
     );
   };
+  const nickName = currentUser  || "JohnDoe123";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -240,7 +216,7 @@ const DashboardScreen = ({ navigation, route }) => {
         <View style={styles.userInfo}>
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>Hello,</Text>
-            <Text style={styles.username}>JohnDoe123</Text>
+            <Text style={styles.username}>{nickName}</Text>
           </View>
         </View>
 
@@ -257,45 +233,16 @@ const DashboardScreen = ({ navigation, route }) => {
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Connected Devices</Text>
-            <TouchableOpacity style={styles.addButton} onPress={() => setDeviceModalVisible(true)}>
-              <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          {connectedDevices.length === 0 ? (
-            <Text style={styles.emptyListText}>No devices connected. Tap + to add a device.</Text>
-          ) : (
-            connectedDevices.map((device) => (
-              <View key={device.id} style={styles.deviceCard}>
-                <View style={styles.deviceLeftSection}>
-                  <View style={styles.deviceIconContainer}>
-                    <MaterialCommunityIcons name="cellphone" size={24} color={COLORS.secondary} />
-                  </View>
-                  <View style={styles.deviceInfo}>
-                    <Text style={styles.deviceName}>{device.name}</Text>
-                    <Text style={styles.deviceDate}>Connected since: {device.connectedSince}</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity onPress={() => removeDevice(device.id)}>
-                  <Ionicons name="trash-outline" size={20} color="#ff3b30" />
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Patients</Text>
+            <Text style={styles.sectionTitle}>Lumofit Users</Text>
             <TouchableOpacity style={styles.addButton} onPress={() => setPatientModalVisible(true)}>
-              <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
+              <View style={styles.darkBlueCircle}>
+                <Ionicons name="add" size={24} color="#fff" />
+              </View>
             </TouchableOpacity>
           </View>
 
           {patients.length === 0 ? (
-            <Text style={styles.emptyListText}>No patients added. Tap + to add a patient.</Text>
+            <Text style={styles.emptyListText}>No users added. Tap + to add a user.</Text>
           ) : (
             patients.map((patient) => (
               <TouchableOpacity
@@ -308,11 +255,11 @@ const DashboardScreen = ({ navigation, route }) => {
                     <Image source={{ uri: patient.avatar }} style={styles.userCardAvatar} />
                   ) : (
                     <View style={[styles.userCardAvatar, styles.placeholderAvatar]}>
-                      <Text style={styles.placeholderText}>{patient.name.charAt(0)}</Text>
+                     {(patient.name || patient.fullName || "").charAt(0)}
                     </View>
                   )}
                   <View style={styles.userCardInfo}>
-                    <Text style={styles.userName}>{patient.name}</Text>
+                    <Text style={styles.userName}>{patient.fullName }</Text>
                     <Text style={styles.userDate}>
                       {patient.age} yrs • {patient.gender} • {patient.bloodType || 'Unknown Blood Type'}
                     </Text>
@@ -345,38 +292,6 @@ const DashboardScreen = ({ navigation, route }) => {
           )}
         </View>
       </ScrollView>
-
-      {/* Add Device Modal */}
-      <Modal visible={isDeviceModalVisible} transparent={true} animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Device</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Device Name"
-              value={newDeviceName}
-              onChangeText={setNewDeviceName}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setNewDeviceName('');
-                  setDeviceModalVisible(false);
-                }}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.modalButton, styles.addButtonModal]} onPress={addNewDevice}>
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Add Patient Modal */}
       <Modal visible={isPatientModalVisible} transparent={true} animationType="slide">
@@ -568,45 +483,18 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 4,
   },
+  darkBlueCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#003366',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyListText: {
     textAlign: 'center',
     color: '#888',
     padding: 16,
-  },
-  deviceCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 0,
-    marginBottom: 4,
-  },
-  deviceLeftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  deviceIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e6f7ef',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deviceInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  deviceName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  deviceDate: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 2,
   },
   userCard: {
     flexDirection: 'row',
@@ -679,13 +567,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
     alignItems: 'center',
   },
   patientModalContent: {

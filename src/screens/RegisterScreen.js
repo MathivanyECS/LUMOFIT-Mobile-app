@@ -59,7 +59,7 @@ const RegistrationSuccess = ({ visible, onClose, onLogin, message }) => {
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
-  const { register, isLoading, registrationSuccess, clearRegistrationSuccess } = useContext(AuthContext);
+  const { register, isLoading,  clearRegistrationSuccess,registrationSuccess } = useContext(AuthContext);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -106,6 +106,7 @@ const RegisterScreen = () => {
     try {
       const result = await register(userData);
       if (result.success) {
+         Alert.alert("the registration flag is" + registrationSuccess);
       } else {
         Alert.alert('Registration Failed', result.error || 'Unknown error');
       }
@@ -131,7 +132,7 @@ const RegisterScreen = () => {
     }
   };
 
-  const showSuccessModal = registrationSuccess !== undefined ? registrationSuccess : localRegistrationSuccess;
+
 
   return (
     <>
@@ -279,7 +280,7 @@ const RegisterScreen = () => {
       
       {/* Registration Success Modal */}
       <RegistrationSuccess
-        visible={showSuccessModal}
+        visible={registrationSuccess}
         onClose={handleCloseSuccess}
         onLogin={handleLoginRedirect}
         message="Your LUMOFIT account has been created successfully! You can now login to access all features."
