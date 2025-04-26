@@ -39,6 +39,7 @@ const DashboardScreen = ({ navigation, route }) => {
   const [medicalCondition, setMedicalCondition] = useState('');
   const [bloodType, setBloodType] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const { registerPatient,currentUser } = useContext(AuthContext);
 
 
@@ -105,6 +106,7 @@ const DashboardScreen = ({ navigation, route }) => {
       medicalCondition,
       bloodType,
       emergencyContact,
+      deviceId,
     };
   
     const result = await registerPatient(newPatient);
@@ -128,6 +130,7 @@ const DashboardScreen = ({ navigation, route }) => {
     setMedicalCondition('');
     setBloodType('');
     setEmergencyContact('');
+    setDeviceId('');
   };
 
   const onChangeBirthDate = (event, selectedDate) => {
@@ -263,6 +266,9 @@ const DashboardScreen = ({ navigation, route }) => {
                     <Text style={styles.userDate}>
                       {patient.age} yrs • {patient.gender} • {patient.bloodType || 'Unknown Blood Type'}
                     </Text>
+                    {patient.deviceId && (
+                      <Text style={styles.deviceIdText}>Device ID: {patient.deviceId}</Text>
+                    )}
                   </View>
                 </View>
 
@@ -367,6 +373,16 @@ const DashboardScreen = ({ navigation, route }) => {
                 <Text style={styles.label}>Blood Type</Text>
                 {renderBloodTypeSelection()}
               </View>
+
+              <View style={styles.formGroup}>
+          <Text style={styles.label}>Device ID</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter patient's device ID"
+            value={deviceId}
+            onChangeText={setDeviceId}
+          />
+        </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Medical Condition</Text>

@@ -5,6 +5,12 @@ import { COLORS } from '../constants/colors';
 import { ROUTES } from '../constants/routes';
 
 const SplashScreen = ({ navigation }) => {
+
+
+
+
+
+
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>

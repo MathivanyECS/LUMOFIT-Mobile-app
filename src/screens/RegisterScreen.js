@@ -106,7 +106,7 @@ const RegisterScreen = () => {
     try {
       const result = await register(userData);
       if (result.success) {
-         Alert.alert("the registration flag is" + registrationSuccess);
+       //Alert.alert("the registration flag is" + registrationSuccess);
       } else {
         Alert.alert('Registration Failed', result.error || 'Unknown error');
       }
@@ -121,7 +121,12 @@ const RegisterScreen = () => {
     } else {
       setLocalRegistrationSuccess(false);
     }
-    navigation.navigate('Login');
+   navigation.navigate('Login');
+
+   navigation.reset({
+    index: 0,
+    routes: [{ name: 'Login' }],
+  });
   };
 
   const handleCloseSuccess = () => {
@@ -130,6 +135,7 @@ const RegisterScreen = () => {
     } else {
       setLocalRegistrationSuccess(false);
     }
+    navigation.navigate('Login');
   };
 
 

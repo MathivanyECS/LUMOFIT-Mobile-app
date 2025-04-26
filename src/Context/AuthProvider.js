@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       setRegistrationSuccess(true);
-      setUserToken(true);
+      //setUserToken(true);
       console.log("registration Success " + registrationSuccess)
       return {
         success: true,
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearRegistrationSuccess = () => {
-    setRegistrationSuccess('false');
+    setRegistrationSuccess(false);
   };
 
   const authContext = {
