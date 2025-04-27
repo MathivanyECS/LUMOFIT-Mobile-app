@@ -2,78 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import IconPlaceholder from '../components/IconPlaceholder';
+import { DetailsContext, DetailsProvider } from  '../Context/DetailsProvider';
+import { useContext } from 'react';
+const HealthDetailPage  = ({ route, navigation }) => {
+  const { patient } = route.params; 
 
-const HealthDetailPage = ({ route, navigation }) => {
-  const { patient } = route.params;
-  const [healthData, setHealthData] = useState({
-    bodyTemperature: {
-      value: '--',
-      unit: '°C',
-      status: 'Unknown',
-    },
-    oxygenLevel: {
-      value: '--',
-      unit: '%',
-      status: 'Unknown',
-    },
-    position: {
-      value: '--',
-      status: 'Unknown',
-    },
-    heartRate: {
-      value: '--',
-      unit: 'BPM',
-      status: 'Unknown',
-    },
-    stressLevel: {
-      value: '--',
-      status: 'Unknown',
-    },
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { healthData, loading, error, fetchHealthData } = useContext(DetailsContext);
 
   useEffect(() => {
-    // Placeholder for future API call to fetch real-time health data and alerts
-    const fetchHealthData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    // Refresh data when the component mounts
+    fetchHealthData(patient.patientID);
+    
+    // Optional: Set up polling for real-time updates
+    const interval = setInterval(() => {
+      fetchHealthData(patient.patientID);
+    }, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [patient.patientID, fetchHealthData]);
 
-        // TODO: Replace with actual API call to fetch health data for patient.id
-        // Example:
-        //const response = await fetch(https:tpyop7bhz5.execute-api.us-east-1.amazonaws.com/getReadings);
-         //const data = await response.json();
 
-        // Simulated data for now
-        const data = {
-          bodyTemperature: { value: 35, unit: '°C', status: 'Normal' },
-          oxygenLevel: { value: 98, unit: '%', status: 'Normal' },
-          position: { value: 'Sitting', status: 'Normal' },
-          heartRate: { value: 75, unit: 'BPM', status: 'Normal' },
-          stressLevel: { value: 'High', status: 'Alert' },
-        };
 
-        setHealthData({
-          bodyTemperature: data.bodyTemperature,
-          oxygenLevel: data.oxygenLevel,
-          position: data.position,
-          heartRate: data.heartRate,
-          stressLevel: data.stressLevel,
-        });
-      } catch (err) {
-        setError('Failed to load health data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHealthData();
-
-    // Optionally, set up polling or subscription for live updates here
-
-  }, [patient.id]);
 
   return (
     <ScrollView style={styles.container}>
@@ -87,7 +36,7 @@ const HealthDetailPage = ({ route, navigation }) => {
   )}
   <View style={styles.profileInfo}>
     <Text style={styles.profileName}>{patient.fullName}</Text>
-    <Text style={styles.profileId}>ID: {patient.id}</Text>
+    <Text style={styles.profileId}>ID: {patient.patientID}</Text>
   </View>
 </View>
 

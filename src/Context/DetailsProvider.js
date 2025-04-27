@@ -28,14 +28,18 @@ export const DetailsProvider = ({ children, patientId }) => {
     try {
       // Replace the endpoint below with the actual API endpoint to fetch health data for the patient
       const response = await api.get(`/getReadings?patientId=${id}`);
-      const data = response.data;
+      const rawData  = response.data;
 
       setHealthData({
-        bodyTemperature: data.bodyTemperature || { value: '--', unit: '°C', status: 'Unknown' },
-        oxygenLevel: data.oxygenLevel || { value: '--', unit: '%', status: 'Unknown' },
-        position: data.position || { value: '--', status: 'Unknown' },
-        heartRate: data.heartRate || { value: '--', unit: 'BPM', status: 'Unknown' },
-        stressLevel: data.stressLevel || { value: '--', status: 'Unknown' },
+        bodyTemperature: rawData.bodyTemperature || { value: '--', unit: '°C', status: 'Unknown' },
+        oxygenLevel: rawData.oxygenLevel || { value: '--', unit: '%', status: 'Unknown' },
+        // Map orientation to position for frontend
+        position: rawData.orientation ? {
+          value: rawData.orientation.value || '--',
+          status: rawData.orientation.status || 'Unknown'
+        } : { value: '--', status: 'Unknown' },
+        heartRate: rawData.heartRate || { value: '--', unit: 'BPM', status: 'Unknown' },
+        stressLevel: rawData.stressLevel || { value: '--', status: 'Unknown' },
       });
     } catch (err) {
       setError('Failed to load health data.');
@@ -47,6 +51,13 @@ export const DetailsProvider = ({ children, patientId }) => {
   useEffect(() => {
     if (patientId) {
       fetchHealthData(patientId);
+      
+      // Set up polling for real-time updates
+      const interval = setInterval(() => {
+        fetchHealthData(patientId);
+      }, 30000); // Poll every 30 seconds
+      
+      return () => clearInterval(interval);
     }
   }, [patientId]);
 

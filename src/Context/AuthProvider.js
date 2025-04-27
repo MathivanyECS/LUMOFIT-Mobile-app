@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
 
       setUserToken(token);
       setUserData(user);
-      setCurrentUser(user.nickname);
+      setCurrentUser(user);
 
       return { success: true };
     } catch (error) {
@@ -181,6 +181,8 @@ export const AuthProvider = ({ children }) => {
     setRegistrationSuccess(false);
   };
 
+
+  
   const authContext = {
     isLoading,
     userToken,
@@ -197,3 +199,5 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>;
 };
+
+

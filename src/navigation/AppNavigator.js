@@ -14,6 +14,7 @@ import CallEmergencyScreen from '../screens/CallEmergencyScreen';
 import ViewVitalsScreen from '../screens/ViewVitalsScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import HealthDetailWrapper from '../screens/HealthDetailWrapper';
+import SettingsPage from '../screens/SettingsPage';
 
 // Import AuthContext
 import { AuthContext, AuthProvider } from '../Context/AuthProvider';
@@ -84,6 +85,7 @@ const AppNavigator = () => {
       <Stack.Screen name={ROUTES.HEALTH_DETAIL} component={HealthDetailWrapper} />
       <Stack.Screen name={ROUTES.VIEW_VITALS} component={ViewVitalsScreen} />
       <Stack.Screen name={ROUTES.CALL_EMERGENCY} component={CallEmergencyScreen} />
+      <Stack.Screen name="SettingsPage" component={SettingsPage} />
      
     </Stack.Navigator>
   );

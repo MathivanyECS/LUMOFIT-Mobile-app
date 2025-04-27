@@ -98,6 +98,7 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   
     const newPatient = {
+      userID:currentUser.userID,
       fullName: patientName,
       age: patientAge,
       gender: patientGender,
@@ -110,7 +111,7 @@ const DashboardScreen = ({ navigation, route }) => {
     };
   
     const result = await registerPatient(newPatient);
-  
+    
     if (result.success) {
       setPatients([...patients, result.patient]);
       saveData('patients', [...patients, result.patient]);
@@ -174,6 +175,21 @@ const DashboardScreen = ({ navigation, route }) => {
     navigation.navigate('HealthDetail', { patient });
   };
 
+
+  const navigateToSettings = () => {
+    navigation.navigate('SettingsPage');
+  };
+  
+  // Update the settings icon onPress
+  <TouchableOpacity style={styles.iconButton} onPress={navigateToSettings}>
+    <Ionicons name="settings-outline" size={24} color="#000" />
+  </TouchableOpacity>
+
+
+
+
+
+
   const renderGenderSelection = () => {
     const genders = ['Male', 'Female', 'Other'];
 
@@ -209,7 +225,7 @@ const DashboardScreen = ({ navigation, route }) => {
       </View>
     );
   };
-  const nickName = currentUser  || "JohnDoe123";
+  const nickName = currentUser.nickname  || "JohnDoe123";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -222,16 +238,21 @@ const DashboardScreen = ({ navigation, route }) => {
             <Text style={styles.username}>{nickName}</Text>
           </View>
         </View>
+        </View>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="settings-outline" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </View>
+        <View style={styles.leftHeader}>
+  <TouchableOpacity style={styles.iconButton}>
+    <Ionicons name="notifications-outline" size={24} color="#000" />
+  </TouchableOpacity>
+  </View>
+  
+
+  <TouchableOpacity style={styles.iconButton} onPress={navigateToSettings}>
+    <Ionicons name="settings-outline" size={24} color="#000" />
+  </TouchableOpacity>
+</View>
+
 
       <ScrollView style={styles.content}>
         <View style={styles.section}>
@@ -466,9 +487,11 @@ const styles = StyleSheet.create({
   },
   headerIcons: {
     flexDirection: 'row',
+    alignItems: 'center', 
   },
   iconButton: {
-    marginLeft: 16,
+    marginLeft: 16, 
+  
   },
   content: {
     flex: 1,
